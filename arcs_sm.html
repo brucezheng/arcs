@@ -380,11 +380,11 @@ function init()
    
    var mouse_held = false;
    
-   $('#canvas').on('vmousedown', function() {
+   $(document).on('vmousedown', function() {
 		mouse_held = true;
    });
    
-   $('#canvas').on('vmouseup', function() {
+   $(document).on('vmouseup', function() {
 		mouse_held = false;
 		currentMousePos.prevX = -1;
    });
@@ -451,7 +451,6 @@ function init()
    // start animation
    requestAnimFrame(fnAnimate);
 }
-		$(document).on("click", "#play_button", function() {$('#run').show(); $('#play_button').hide();})
 		$(document).on("click", "#clear_a", function(event) {
 			event.preventDefault();
 			clearPts();
@@ -460,15 +459,14 @@ function init()
    </head>
    
    <body style="background-color: white">
-	  <div data-role="none" id="play_button" style="width:600px; height: 700px; background-color: gray;">
-	  
-	  </div>
-      <div data-role="none" id="run" hidden>
-	  <div style="margin-top: -15px; position: absolute; width: 600px; text-align: center;"> <p class="small">Drag to rotate the sphere. Click & hold to place endpoints of a path (either on the map or the sphere). <br> <span id="dummy"></span><a id="clear_a" href = "#dummy">Click here to clear drawn paths (or press 'c').</a> </p></div>
-      <canvas id="canvas" width="600" height="700" style="background-color: #eee"></canvas>
-      <div style="margin-top: -40px; position: absolute; width: 600px;"><p class="small">Bruce Zheng, Dec 2014</p></div>
-      <div style="margin-top: -40px; margin-left: 345px; position: absolute"><p class="small">Made using the <a href = "http://www.kevs3d.co.uk/dev/phoria/">Phoria</a> library, by Kevin Roast</p></div>
-	  <div id="log"></div>
+      <div style="width:100%; background-color: white;">
+		  <div data-role="none" id="run" style="width:600px; margin: 0 auto;">
+		  <div style="margin-top: -15px; position: absolute; width: 600px; text-align: center;"> <p class="small">Drag to rotate the sphere. Click & hold to place endpoints of a path (either on the map or the sphere). <br> <span id="dummy"></span><a id="clear_a" href = "#dummy">Click here to clear drawn paths (or press 'c').</a> </p></div>
+		  <canvas id="canvas" width="600" height="700" style="background-color: #eee"></canvas>
+		  <div style="margin-top: -40px; position: absolute; width: 600px;"><p class="small">Bruce Zheng, Dec 2014</p></div>
+		  <div style="margin-top: -40px; margin-left: 345px; position: absolute"><p class="small">Made using the <a href = "http://www.kevs3d.co.uk/dev/phoria/">Phoria</a> library, by Kevin Roast</p></div>
+		  <div id="log"></div>
+		  </div>
 	  </div>
    </body>
    <script>
