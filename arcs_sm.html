@@ -349,10 +349,19 @@ function init()
 	  newH: 0
    };
    
+   var margin_displace = 0;
+   function set_margin_displace() {
+   console.log("margin: " + $('#run').css('margin-left'));
+		margin_displace = -1 * $('#run').css('margin-left').slice(0,-2);
+		if(!margin_displace) margin_displace = 0;
+   }
+   
    function add_point() {
-      var cpv = Phoria.View.calculateClickPointAndVector(scene, currentMousePos.x, currentMousePos.y);
+	
+      var cpv = Phoria.View.calculateClickPointAndVector(scene, currentMousePos.x + margin_displace, currentMousePos.y);
       var intersects = Phoria.View.getIntersectedObjects(scene, cpv.clickPoint, cpv.clickVector);
 
+	  console.log(intersects.length);
 	  if (intersects.length !== 0)
       {
 		 ++numPoints;
@@ -391,10 +400,10 @@ function init()
    
    $.event.special.tap.tapholdThreshold = 250;
    $.event.special.tap.emitTapOnTaphold = false;
+   
    $('#canvas').on('taphold', function(e) {
 		e.preventDefault();
 		if(Math.abs(rot.vely) < 1) add_point();
-		//console.log(mouse.velocityH );
    });
    
    
@@ -450,11 +459,15 @@ function init()
 
    // start animation
    requestAnimFrame(fnAnimate);
-}
+   
 		$(document).on("click", "#clear_a", function(event) {
 			event.preventDefault();
 			clearPts();
 		});
+		
+		$(document).ready( function() { set_margin_displace(); });
+		$(window).on("resize", function() { set_margin_displace(); });
+}
       </script>
    </head>
    
