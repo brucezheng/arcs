@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+   <head><meta http-equiv="Content-Type" content="text/html; charset=gb18030">
+      
+      <title>Least Distance Arcs</title>
+      <style>
+      p.serif {
+      font-family: "Times New Roman", Times, serif;
+      }
+      p.small {
+font-family: "Times New Roman", Times, serif; 
+font-size:small; color: gray;
+      } 
+      </style>
+      <script src="arcs/scripts/gl-matrix.js"></script>
+      <script src="arcs/scripts/phoria-util.js"></script>
+      <script src="arcs/scripts/phoria-entity.js"></script>
+      <script src="arcs/scripts/phoria-scene.js"></script>
+      <script src="arcs/scripts/phoria-renderer.js"></script>
+      <script src="arcs/scripts/phoria-view.js"></script>
+      <script src='arcs/scripts/dat.gui.min.js'></script>
+      <script>
+var requestAnimFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
+                       window.mozRequestAnimationFrame || window.msRequestAnimationFrame || 
+                       function(c) {window.setTimeout(c, 15)};
+/**
+   Phoria
+   pho·ri·a (fôr-)
+   n. The relative directions of the eyes during binocular fixation on a given object
+*/
+
+var globeRot = 0;
+
+function makePolar(_r, _a, _b) {
+	var result = { r: _r, a: _a, b: _b };
+	return result;
+}
+
+function makeCart(_x, _y, _z) {
+	var result = { x: _x, y: _y, z: _z };
+	return result;
+}
+
+function updateGlobeRot(theta) {
+	globeRot += theta;
+	if (globeRot > Math.PI) globeRot -= 2*Math.PI;
+	else if (globeRot < -1*Math.PI) globeRot += 2*Math.PI;
+}
+
+function polarToCart(point, origin) {
+	var result = makeCart(origin.x,origin.y,origin.z);
+	var delta = makeCart(0,0,0);
+	delta.x = (point.r * Math.cos(point.a) * Math.sin(point.b));
+	delta.z = -1 * point.r * Math.sin(point.a) * Math.sin(point.b);
+	delta.y = point.r * Math.cos(point.b);
+	result.x += delta.x;
+	result.y += delta.y;
+	result.z += delta.z;
+	return result;
+}
+
+function cartToPolar(point, origin) {
+	var result = makePolar(0,0,0);
+	var delta = makeCart(point.x - origin.x,point.y - origin.y,point.z - origin.z);
+	result.r = Math.sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+	result.a = Math.atan2((-1*delta.z),delta.x);
+	result.b = Math.acos(delta.y / result.r);
+	return result;
+}
+
+function rotateVertAxis(point, origin, theta) {
+	var sphereCoord = cartToPolar(point,origin);
+	sphereCoord.a += theta;
+	var result = polarToCart(sphereCoord,origin);
+	return result;
+}
+
+function mark(point) {
+	return Phoria.Entity.create({
+      points: [point],
+      style: {
+         color: [0,0,255],
+         drawmode: "point",
+         shademode: "plain",
+         linewidth: 3.5,
+         linescale: 2
+      }
+   });
+}
+
+function mapMark(point) {
+	return Phoria.Entity.create({
+      points: [point],
+      style: {
+         color: [255,0,0],
+         drawmode: "point",
+         shademode: "plain",
+         linewidth: 3.5,
+         linescale: 2
+      }
+   });
+}
+
+function smallMark(point) {
+	return Phoria.Entity.create({
+      points: [point],
+      style: {
+         color: [0,0,255],
+         drawmode: "point",
+         shademode: "plain",
+         linewidth: 1.5,
+         linescale: 2
+      }
+   });
+}
+
+function smallMapMark(point) {
+	return Phoria.Entity.create({
+      points: [point],
+      style: {
+         color: [255,0,0],
+         drawmode: "point",
+         shademode: "plain",
+         linewidth: 1.5,
+         linescale: 2
+      }
+   });
+}
+
+function norm(a) {
+	var mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+	return makeCart(a.x/mag, a.y/mag, a.z/mag);
+}
+
+function mult(a,s) {
+	return makeCart(a.x*s,a.y*s,a.z*s);
+}
+
+function mag(a) {
+	return Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+}
+
+function sub(a,b) {
+	return makeCart(a.x-b.x,a.y-b.y,a.z-b.z);
+}
+
+function add(a,b) {
+	return makeCart(a.x+b.x,a.y+b.y,a.z+b.z);
+}
+
+function dot(a, b) {
+	return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+
+var mapAttr = {
+	x: -5.5,
+	y: 0,
+	z: 4,
+	h: 10,
+	w: 20
+};
+
+var center = { 
+	x: 8.75,
+	y: 0, 
+	z: 0
+};
+
+function globeToMap (globe) {
+	var result = makeCart(mapAttr.x-mapAttr.w/2,mapAttr.y-mapAttr.h/2,mapAttr.z-.1);
+	var polar = cartToPolar(globe,center);
+	var alpha = globeRot - polar.a;
+	while (alpha > 2*Math.PI) alpha -= 2*Math.PI;
+	while (alpha < 0) alpha += 2*Math.PI;
+	result.x += mapAttr.w * (alpha) / (2 * Math.PI);
+	result.y += mapAttr.h * (1 - polar.b / Math.PI);
+	return result;
+}
+
+function mapToGlobe(map) {
+	var polar = makePolar(4.05,0,0);
+	var alpha = 2*Math.PI*(map.x-(mapAttr.x-mapAttr.w/2))/mapAttr.w;
+	alpha = alpha - Math.PI;
+	var beta = Math.PI*(1-((mapAttr.y-mapAttr.h/2)-map.y)/mapAttr.h);
+	polar.a = globeRot - alpha;
+	polar.b = beta;
+	return polarToCart(polar,center);
+}
+
+// bind to window onload event
+window.addEventListener('load', onloadHandler, false);
+var bitmaps = [];
+function onloadHandler()
+{
+   // get the arcs/images loading
+   var loader = new Phoria.Preloader();
+   bitmaps.push(new Image(), new Image());
+   loader.addImage(bitmaps[0], 'arcs/images/equigray.png');
+   loader.addImage(bitmaps[1], 'arcs/images/equi.jpg');
+   loader.onLoadCallback(init);
+}
+function init()
+{
+   // get the canvas DOM element and the 2D drawing context
+   var canvas = document.getElementById('canvas');
+   
+   // create the scene and setup camera, perspective and viewport
+   var scene = new Phoria.Scene();
+   scene.camera.position = {x:0.0, y:0.0, z:-25.0};
+   scene.camera.lookat = {x:0.0, y:0.0, z:0.0};
+   scene.perspective.aspect = canvas.width / canvas.height;
+   scene.viewport.width = canvas.width;
+   scene.viewport.height = canvas.height;
+   
+   // create a canvas renderer
+   var renderer = new Phoria.CanvasRenderer(canvas);
+   
+   var p = Phoria.Util.generateTesselatedPlane(2,4,0,10, true);
+   var plane = Phoria.Entity.create({
+      id: "Map",
+      points: p.points,
+      edges: p.edges,
+      polygons: p.polygons,
+      style: {
+         color: [255, 255, 255],
+         texture: 0
+      }
+   });
+   plane.translateX(-5.5);
+   plane.translateY(0);
+   plane.translateZ(4);
+   plane.rotateX(-1.6);
+   plane.textures.push(bitmaps[0]);
+   plane.scale(vec3.fromValues(2,1,1));
+   scene.graph.push(plane);
+   
+   var s = Phoria.Util.generateSphere(4, 10, 20, true);
+   var sphere = Phoria.Entity.create({
+      id: "Globe",
+      points: s.points,
+      edges: s.edges,
+      polygons: s.polygons,
+      style: {
+         color: [255, 255, 255],
+         texture: 0
+      }
+   });
+   sphere.translateY(0);
+   sphere.translateX(8.75);
+   sphere.textures.push(bitmaps[0]);
+   scene.graph.push(sphere);
+   
+   var markerInit = false;
+   
+   var marker = mark(point = {x : 8.75, y: 1, z: -30});
+   scene.graph.push(marker);
+   
+   var mapMarker = mapMark(point = {x : 8.75, y: 1, z: -30});
+   scene.graph.push(mapMarker);
+
+   scene.graph.push(Phoria.DistantLight.create({
+      direction: {x:0.4, y:0, z:1},
+      intensity: 3
+   }));
+   
+   // mouse rotation and position tracking
+   var numPoints = 0;
+   var timer = null;
+   var doubleClick = 0;
+   var onCircle = false;
+   
+   clearPts = function() {
+			while (marker.children.length > 0) {
+				marker.children.pop();
+				mapMarker.children.pop();
+			}
+			numPoints = 0;
+   }
+   
+   cartString = function(point) {
+		return "(" + parseFloat(point.x).toFixed(3) + "," + parseFloat(point.y).toFixed(3) + "," + parseFloat(point.z).toFixed(3) + ")";
+   }
+   
+   fillPts = function() {
+		var length = marker.children.length;
+		var first  = norm(sub(marker.children[length-2].points[0],center));
+		var last = norm(sub(marker.children[length-1].points[0],center));
+		var u = norm(sub(last,mult(first,dot(first,last))));
+		var arc = Math.acos(dot(first,last));
+		var n = Math.ceil(arc/0.02);
+		for(i = 1; i < n; i++) {
+			var deg = i*arc/n;
+			var insert = add(mult(first,Math.cos(deg)),mult(u,Math.sin(deg)));
+			var insertPolar = cartToPolar(add(insert,center),center);
+			insertPolar.r = 4.075;
+			insert = polarToCart( insertPolar, center );
+			marker.children.push( smallMark(insert) );
+			mapMarker.children.push( smallMapMark( globeToMap(insert) ) );
+		}
+   }
+   
+   var mouse = Phoria.View.addMouseEvents(canvas, function() {
+      // pick object detection on mouse click
+      var cpv = Phoria.View.calculateClickPointAndVector(scene, mouse.clickPositionX, mouse.clickPositionY);
+      var intersects = Phoria.View.getIntersectedObjects(scene, cpv.clickPoint, cpv.clickVector);
+	  
+	  doubleClick += 1;
+      clearInterval(timer);
+      timer = setTimeout(function() {
+        doubleClick = 0;
+      },200);
+		 
+      if (intersects.length !== 0 && doubleClick == 2)
+      {
+		 ++numPoints;
+		 doubleClick = 0;
+		 onCircle = true;
+		 pt = intersects[0].intersectionPoint;
+		 if (intersects[0].entity.id === "Map") {
+			var point = makeCart(pt[0],pt[1],mapAttr.z-0.1);
+			mapMarker.children.push( mapMark(point) );
+			marker.children.push( mark(mapToGlobe(point)) );
+		}
+         else {
+			var point = { x: pt[0], y: pt[1], z: pt[2] };
+			var sphere = cartToPolar(point,center);
+			sphere.r = 4.05;
+			point = polarToCart(sphere,center);
+			marker.children.push( mark(point) );
+			mapMarker.children.push( mapMark(globeToMap(point)) );
+		}
+		if(numPoints > 0 && numPoints % 2 == 0) {
+			fillPts();
+		}
+      }
+	  
+   });
+
+   var rot = {
+      y: 0,
+      vely: 0,
+      nowy: 0, 
+      ratio: 0.1
+   };
+   
+   var velH = { 
+	  rel: 0,
+	  oldH: 0,
+	  newH: 0
+   };
+   
+   var pause = false;
+   var fnAnimate = function() {
+      if (!pause)
+      {
+		 velH.oldH = velH.newH;
+		 velH.newH = mouse.velocityH;
+		 if (mouse.positionX > 800) 
+			velH.rel += (velH.newH - velH.oldH);
+         rot.nowy += (rot.vely = (velH.rel - rot.y - rot.nowy) * rot.ratio);
+		 
+         sphere.rotateY(-rot.vely*Phoria.RADIANS);
+		 updateGlobeRot(-rot.vely*Phoria.RADIANS);
+		 
+		 var temp;
+		 if(onCircle) {
+		 	for(i = 0; i < marker.children.length; i++) {
+				marker.children[i].points[0] = rotateVertAxis(marker.children[i].points[0],center,-rot.vely*Phoria.RADIANS);
+				temp = cartToPolar(marker.children[i].points[0],center);
+				if(temp.a < 0.5) marker.children[i].style.objectsortmode = "back";
+				else marker.children[i].style.objectsortmode = "sorted";
+			}
+		}
+         // execute the model view 3D pipeline and render the scene
+         scene.modelView();
+         renderer.render(scene);
+      }
+      requestAnimFrame(fnAnimate);
+   };
+   
+   // key binding
+   document.addEventListener('keydown', function(e) {
+      switch (e.keyCode)
+      {
+         case 27:
+         {
+            pause = !pause;
+            break;
+         }
+		 case 67:
+		 {
+			clearPts();
+			break;
+		 }
+      }
+   }, false);
+
+   // start animation
+   requestAnimFrame(fnAnimate);
+}
+      </script>
+   </head>
+   
+   <body style="background-color: white">
+      <div style="margin-top: -15px; margin-left: 5px; position: absolute"> <p class="serif">Drag to rotate the sphere. Double click to place endpoints of a path (either on the map or the sphere). Press 'c' to clear drawn paths. </p></div>
+      <canvas id="canvas" width="1280" height="720" style="background-color: #eee"></canvas>
+      <div style="margin-top: -40px; margin-left: 5px; position: absolute"><p class="small">Bruce Zheng, Dec 2014</p></div>
+      <div style="margin-top: -40px; margin-left: 1030px; position: absolute"><p class="small">Made using the <a href = "http://www.kevs3d.co.uk/dev/phoria/">Phoria</a> library, by Kevin Roast</p></div>
+      <div style="margin-top: -25px; margin-left: 5px; position: absolute" id="debug"></div>
+      <div style="margin-top: -50px; margin-left: 5px; position: absolute" id="debug2"></div>
+      <div style="margin-top: -75px; margin-left: 5px; position: absolute" id="debug3"></div>
+      <div style="margin-top: -25px; margin-left: 300px; position: absolute" id="debug4"></div>
+      <div style="margin-top: -50px; margin-left: 300px; position: absolute" id="debug5"></div>
+   </body>
+</html>
