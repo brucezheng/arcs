@@ -8,10 +8,14 @@
       p.serif {
       font-family: "Times New Roman", Times, serif;
       }
-      p.small {
+      p.small, h4.small {
 		font-family: "Times New Roman", Times, serif; 
 		font-size:small; color: gray;
-      } 
+		font-weight: normal;
+      }     span.justify {
+        display: inline-block;
+        width: 50%
+    }
       </style>
 	  
       <script src="arcs/scripts/gl-matrix.js"></script>
@@ -99,7 +103,7 @@ function mark(point) {
          color: [0,0,255],
          drawmode: "point",
          shademode: "plain",
-         linewidth: 3.5,
+         linewidth: 2.5,
          linescale: 2
       }
    });
@@ -112,7 +116,7 @@ function mapMark(point) {
          color: [255,0,0],
          drawmode: "point",
          shademode: "plain",
-         linewidth: 3.5,
+         linewidth: 2.5,
          linescale: 2
       }
    });
@@ -125,7 +129,7 @@ function smallMark(point) {
          color: [0,0,255],
          drawmode: "point",
          shademode: "plain",
-         linewidth: 1.5,
+         linewidth: 1.25,
          linescale: 2
       }
    });
@@ -138,7 +142,7 @@ function smallMapMark(point) {
          color: [255,0,0],
          drawmode: "point",
          shademode: "plain",
-         linewidth: 1.5,
+         linewidth: 1.25,
          linescale: 2
       }
    });
@@ -169,21 +173,19 @@ function dot(a, b) {
 	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
-
 var mapAttr = {
-	x: 0,
-	y: 5.75,
-	z: 2,
+	x: -5.5,
+	y: 0,
+	z: 4,
 	h: 10,
 	w: 20
 };
 
 var center = { 
-	x: 0,
-	y: -5, 
-	z: -2
+	x: 8.75,
+	y: 0, 
+	z: 0
 };
-
 
 function globeToMap (globe) {
 	var result = makeCart(mapAttr.x-mapAttr.w/2,mapAttr.y-mapAttr.h/2,mapAttr.z-.1);
@@ -225,7 +227,7 @@ function init()
    
    // create the scene and setup camera, perspective and viewport
    var scene = new Phoria.Scene();
-   scene.camera.position = {x:0.0, y:0.0, z:-37.0};
+   scene.camera.position = {x:0.0, y:0.0, z:-22.0};
    scene.camera.lookat = {x:0.0, y:0.0, z:0.0};
    scene.perspective.aspect = canvas.width / canvas.height;
    scene.viewport.width = canvas.width;
@@ -251,11 +253,11 @@ function init()
    plane.translateZ(mapAttr.z);
    plane.rotateX(-1.6);
    plane.textures.push(bitmaps[0]);
-   plane.scale(vec3.fromValues(2,1,1));
+   plane.scale(vec3.fromValues(2,1.05,1));
    scene.graph.push(plane);
    
    //sphere make
-   var s = Phoria.Util.generateSphere(4, 8, 16, true);
+   var s = Phoria.Util.generateSphere(4, 16, 16, true);
    var sphere = Phoria.Entity.create({
       id: "Globe",
       points: s.points,
@@ -269,6 +271,7 @@ function init()
    sphere.translateY(center.y);
    sphere.translateX(center.x);
    sphere.translateZ(center.z);
+   sphere.scale(vec3.fromValues(1,1.05,1));
    sphere.textures.push(bitmaps[0]);
    scene.graph.push(sphere);
    
@@ -425,7 +428,7 @@ function init()
 		 velH.oldH = velH.newH;
 		 velH.newH = currentMousePos.velocityH;
 		 // logic for when mouse move can rotate
-		 if (currentMousePos.y > 320) 
+		 if (currentMousePos.x > 750) 
 			velH.rel += (velH.newH - velH.oldH);
          rot.nowy += (rot.vely = (velH.rel - rot.y - rot.nowy) * rot.ratio);
 		 
@@ -479,11 +482,10 @@ function init()
    
    <body style="background-color: white">
       <div id="container" style="width:100%; background-color: white;">
-		  <div data-role="none" id="run" style="width:600px; margin: 0 auto;">
-		  <div style="margin-top: -15px; position: absolute; width: 600px; text-align: center;"> <p class="small">Drag to rotate the sphere. Click & hold to place endpoints of a path (either on the map or the sphere). <br> <span id="dummy"></span><a id="clear_a" href = "#dummy">Click here to clear drawn paths (or press 'c').</a> </p></div>
-		  <canvas id="canvas" width="600" height="700" style="background-color: #eee"></canvas>
-		  <div style="margin-top: -40px; position: absolute; width: 600px;"><p class="small">Bruce Zheng, Dec 2014</p></div>
-		  <div style="margin-top: -40px; margin-left: 345px; position: absolute"><p class="small">Made using the <a href = "http://www.kevs3d.co.uk/dev/phoria/">Phoria</a> library, by Kevin Roast</p></div>
+		  <div data-role="none" id="run" style="width:1000px; margin: 0 auto;">
+		  <div style="margin-top: -15px; position: absolute; width: 1000px; text-align: center;"> <p class="small">Drag to rotate the sphere. Click & hold to place endpoints of a path (either on the map or the sphere). <br> <span id="dummy"></span><a id="clear_a" href = "#dummy">Click here to clear drawn paths (or press 'c').</a> </p></div>
+		  <canvas id="canvas" width="1000" height="500" style="background-color: #eee"></canvas>
+		  <div style="margin-top: -40px; position: absolute; width: 1000px;"><h4 class="small"><span  class="justify" width="300">Bruce Zheng, Dec 2014</span><span  class="justify" style="text-align:right;">Made using the <a href = "http://www.kevs3d.co.uk/dev/phoria/">Phoria</a> library, by Kevin Roast</span></h4></div>
 		  <div id="log"></div>
 		  </div>
 	  </div>
