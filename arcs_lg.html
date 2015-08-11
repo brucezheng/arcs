@@ -271,7 +271,7 @@ function init()
    sphere.translateY(center.y);
    sphere.translateX(center.x);
    sphere.translateZ(center.z);
-   sphere.scale(vec3.fromValues(1,1.05,1));
+   sphere.scale(vec3.fromValues(1,1.064,1));
    sphere.textures.push(bitmaps[0]);
    scene.graph.push(sphere);
    
@@ -284,7 +284,7 @@ function init()
    scene.graph.push(mapMarker);
 
    scene.graph.push(Phoria.DistantLight.create({
-      direction: {x:0, y:-0.25, z:2},
+      direction: {x:1, y:-0, z:2},
       intensity: 3
    }));
    
